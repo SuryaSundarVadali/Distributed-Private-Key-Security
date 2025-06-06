@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    networks:
+      - crypto_network
+    restart: unless-stopped
+
+  node_0:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    environment:
+      - NODE_ID=node_0
+      - SCHEDULER_HOST=scheduler
+      - SCHEDULER_PORT=8000
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    networks:
+      - crypto_network
+    depends_on:
+      - scheduler
+    restart: unless-stopped
+
+  node_1:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    environment:
+      - NODE_ID=node_1
+      - SCHEDULER_HOST=scheduler
+      - SCHEDULER_PORT=8000
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    networks:
+      - crypto_network
+    depends_on:
+      - scheduler
+    restart: unless-stopped
+
+  node_2:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    environment:
+      - NODE_ID=node_2
+      - SCHEDULER_HOST=scheduler
+      - SCHEDULER_PORT=8000
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    networks:
+      - crypto_network
+    depends_on:
+      - scheduler
+    restart: unless-stopped
+
+  node_3:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    environment:
+      - NODE_ID=node_3
+      - SCHEDULER_HOST=scheduler
+      - SCHEDULER_PORT=8000
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    networks:
+      - crypto_network
+    depends_on:
+      - scheduler
+    restart: unless-stopped
+
+  node_4:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    environment:
+      - NODE_ID=node_4
+      - SCHEDULER_HOST=scheduler
+      - SCHEDULER_PORT=8000
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    networks:
+      - crypto_network
+    depends_on:
+      - scheduler
+    restart: unless-stopped
+
+networks:
+  crypto_network:
+    driver: bridge
