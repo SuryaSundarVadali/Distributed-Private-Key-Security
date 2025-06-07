@@ -6,623 +6,777 @@ A sophisticated distributed cryptographic system that implements Multi-Factor Ke
 
 1. [Architecture Overview](#architecture-overview)
 2. [Prerequisites](#prerequisites)
-3. [Installation](#installation)
+3. [Quick Start](#quick-start)
 4. [File Structure](#file-structure)
 5. [Configuration](#configuration)
 6. [Running the System](#running-the-system)
-7. [API Endpoints](#api-endpoints)
-8. [Monitoring and Debugging](#monitoring-and-debugging)
-9. [Security Considerations](#security-considerations)
-10. [Troubleshooting](#troubleshooting)
-11. [Contributing](#contributing)
+7. [Task Types](#task-types)
+8. [API Endpoints](#api-endpoints)
+9. [Monitoring](#monitoring)
+10. [Security Features](#security-features)
+11. [Troubleshooting](#troubleshooting)
+12. [Development](#development)
 
 ## Architecture Overview
 
-The system implements a distributed cryptographic workflow:
+### System Design
 
-1. **MFKDF Key Generation**: Creates RSA private keys using multi-factor authentication
-2. **Secret Sharing**: Distributes private key shares using Shamir's Secret Sharing
-3. **HOTP Verification**: Generates and verifies time-based tokens for authentication
-4. **Merkle Tree Storage**: Ensures data integrity through cryptographic proofs
-5. **MPC Computation**: Performs secure multi-party computations
-6. **Key Reconstruction**: Reconstructs private keys from distributed shares
-7. **HEFT Scheduling**: Optimally distributes tasks across compute nodes
+The system consists of two main layers:
 
-### Components
+**1. Cryptographic Infrastructure Layer** (runs on every node):
+- **MFKDF Key Generation**: Multi-factor authenticated RSA key generation
+- **Secret Sharing**: Shamir's Secret Sharing for key distribution
+- **HOTP Authentication**: Time-based token authentication between nodes
+- **Merkle Tree Verification**: Data integrity proofs
+- **MPC Framework**: Secure multi-party computation capabilities
 
-- **Scheduler Server**: Central coordinator using HEFT algorithm
-- **Distributed Nodes**: Worker nodes executing cryptographic tasks
-- **Docker Containers**: Isolated execution environments
-- **REST API**: Communication between scheduler and nodes
+**2. Distributed Computing Layer**:
+- **HEFT Scheduler**: Optimal task distribution using Heterogeneous Earliest Finish Time algorithm
+- **Worker Nodes**: Execute computational tasks while maintaining cryptographic security
+- **Task Types**: Mathematical, data processing, image processing, ML, scientific computing
+
+### Task Categories
+
+- **Mathematical**: Prime generation, matrix multiplication, Fibonacci calculation
+- **Data Processing**: Array sorting, pattern search, data compression
+- **Image Processing**: Filters, object detection, image enhancement
+- **Network**: Web crawling, API data fetching
+- **Machine Learning**: Linear regression, K-means clustering
+- **File Operations**: Hashing, encryption, statistical analysis
+- **Scientific**: Monte Carlo simulations, statistical analysis
 
 ## Prerequisites
 
-- **Docker**: Version 20.0 or higher
-- **Docker Compose**: Version 2.0 or higher
-- **Python**: Version 3.9 or higher (for local development)
-- **Git**: For cloning the repository
-
 ### System Requirements
-
-- **Memory**: Minimum 4GB RAM
+- **Docker**: Version 20.0+ 
+- **Docker Compose**: Version 2.0+
+- **Memory**: 4GB RAM minimum (8GB recommended)
 - **CPU**: Multi-core processor (4+ cores recommended)
-- **Storage**: 2GB free disk space
-- **Network**: Open ports 8000-8010
+- **Network**: Ports 8000-8010 available
+- **Storage**: 2GB free space
 
-## Installation
+### For Local Development
+- **Python**: 3.9+
+- **Git**: Latest version
 
-### 1. Clone the Repository
+## Quick Start
+
+### 1. Clone and Setup
 
 ```bash
+# Clone repository
 git clone <repository-url>
-cd Private\ Key\ Security
+cd "Private Key Security"
+
+# Make scripts executable (Linux/macOS)
+chmod +x Scripts/*.py
 ```
 
-### 2. Install Dependencies (Local Development)
+### 2. Docker Deployment (Recommended)
+
+```bash
+# Start the entire system (Infrastructure folder contains Docker files)
+docker-compose up --build
+
+# Or run in background
+docker-compose up --build -d
+
+# Check logs
+docker-compose logs -f
+
+# Stop system
+docker-compose down
+```
+
+### 3. Local Development Setup
 
 ```bash
 # Create virtual environment
 python -m venv venv
 
-# Activate virtual environment
-# On Windows:
+# Activate (Windows)
 venv\Scripts\activate
-# On Linux/macOS:
+
+# Activate (Linux/macOS) 
 source venv/bin/activate
 
-# Install requirements
-pip install -r requirements.txt
-```
+# Install dependencies (Infrastructure folder contains requirements.txt)
+pip install -r Infrastructure/requirements.txt
 
-### 3. Verify Docker Installation
-
-```bash
-docker --version
-docker-compose --version
+# Run locally
+python Scripts/run_local.py --nodes 5 --threshold 3
 ```
 
 ## File Structure
 
 ```
 Private Key Security/
-├── README.md                      # This file
-├── requirements.txt               # Python dependencies
-├── docker-compose.yaml           # Docker orchestration
-├── Dockerfile.scheduler          # Scheduler container
-├── Dockerfile.node               # Node container
-├── 
-├── Core Cryptographic Modules:
-├── mfkdf.py                      # Multi-Factor Key Derivation
-├── secret_sharing.py             # Shamir's Secret Sharing
-├── hotp.py                       # HMAC-based OTP
-├── merkle_tree.py                # Merkle Tree implementation
-├── mpc.py                        # Multi-Party Computation
-├── key_generation.py             # MFKDF Key Generator
-├── 
-├── Distributed System:
-├── task_scheduler.py             # HEFT Algorithm (heft_scheduler.py)
-├── scheduler_server.py           # Central Scheduler
-├── distributed_node.py           # Worker Nodes
-├── enhanced_distributed_executor.py  # Main Executor
-├── 
-└── Scripts:
-    ├── run_local.py              # Local execution script
-    ├── monitor.py                # System monitoring
-    └── test_system.py            # System tests
+├── 📁 Core System/
+│   ├── scheduler_server.py          # Central HEFT scheduler
+│   ├── distributed_node.py          # Worker node implementation
+│   ├── task_scheduler.py           # HEFT algorithm & task definitions
+│   └── enhanced_distributed_executor.py  # Main system coordinator
+│
+├── 📁 Cryptographic Modules/
+│   ├── mfkdf.py                    # Multi-Factor Key Derivation
+│   ├── secret_sharing.py          # Shamir's Secret Sharing
+│   ├── hotp.py                     # HMAC-based OTP
+│   ├── merkle_tree.py              # Merkle Tree implementation
+│   ├── mpc.py                      # Multi-Party Computation
+│   └── key_generation.py          # MFKDF key generator
+│
+├── 📁 Infrastructure/
+│   ├── docker-compose.yaml        # Docker orchestration
+│   ├── Dockerfile.scheduler       # Scheduler container
+│   ├── Dockerfile.node            # Node container
+│   ├── requirements.txt           # Python dependencies
+│   └── .env                       # Environment configuration
+│
+├── 📁 Scripts/
+│   ├── run_local.py               # Local execution
+│   ├── monitor.py                 # System monitoring
+│   └── test_system.py             # System tests
+│
+├── 📁 logs/                        # Runtime logs directory
+├── 📁 __pycache__/                 # Python cache files (auto-generated)
+├── README.md                       # This file
+└── .gitignore                     # Git ignore rules
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-Create a `.env` file in the project root:
+Create `.env` file in the `Infrastructure/` folder or set environment variables:
 
-```env
+```bash
 # System Configuration
-NUM_NODES=5
-THRESHOLD=3
-SCHEDULER_PORT=8000
-HEARTBEAT_INTERVAL=10
+NUM_NODES=5                    # Number of worker nodes
+THRESHOLD=3                    # Secret sharing threshold
+SCHEDULER_PORT=8000           # Scheduler port
+HEARTBEAT_INTERVAL=10         # Heartbeat frequency (seconds)
 
-# Security Settings
-MASTER_SEED_FILE=master.seed
-LOG_LEVEL=INFO
+# Security Settings  
+LOG_LEVEL=INFO                # Logging level
+MASTER_SEED_FILE=master.seed  # Seed file location
 
 # Docker Settings
 COMPOSE_PROJECT_NAME=crypto_system
 ```
 
-### Node Configuration
+### Node Specializations
 
-Each node can be customized with:
-- Processing power multiplier
-- Available authentication factors
-- Maximum concurrent tasks
-- Specialized task types
+Nodes automatically specialize in different task types based on their ID:
+
+- **Nodes 0-19**: Mathematical computations
+- **Nodes 20-39**: Data processing
+- **Nodes 40-59**: Image processing  
+- **Nodes 60-79**: Network operations
+- **Nodes 80-99**: Machine learning & scientific computing
 
 ## Running the System
 
-### Option 1: Docker Compose (Recommended)
-
-#### 1. Start the Complete System
+### Option 1: Docker (Production-like)
 
 ```bash
-# Start all services
-docker-compose up -d
+# Navigate to project root
+cd "Private Key Security"
 
-# View logs
-docker-compose logs -f
+# Start all services (Docker files are in Infrastructure/)
+docker-compose -f Infrastructure/docker-compose.yaml up --build
 
-# Check service status
-docker-compose ps
-```
+# Scale nodes (optional)
+docker-compose -f Infrastructure/docker-compose.yaml up --scale node_0=2 --scale node_1=2
 
-#### 2. Scale Nodes Dynamically
+# View specific service logs
+docker-compose -f Infrastructure/docker-compose.yaml logs scheduler
+docker-compose -f Infrastructure/docker-compose.yaml logs node_0
 
-```bash
-# Add more nodes
-docker-compose up -d --scale node_0=2 --scale node_1=3
-
-# Remove nodes
-docker-compose stop node_4
-```
-
-#### 3. Individual Service Management
-
-```bash
-# Start only scheduler
-docker-compose up -d scheduler
-
-# Start specific nodes
-docker-compose up -d node_0 node_1 node_2
-
-# Restart services
-docker-compose restart scheduler
+# Stop and cleanup
+docker-compose -f Infrastructure/docker-compose.yaml down -v
 ```
 
 ### Option 2: Local Development
 
-#### 1. Start the Scheduler
-
 ```bash
-python scheduler_server.py 8000
-```
-
-#### 2. Start Worker Nodes
-
-```bash
-# Terminal 1
-NODE_ID=node_0 SCHEDULER_HOST=localhost python distributed_node.py
-
-# Terminal 2
-NODE_ID=node_1 SCHEDULER_HOST=localhost python distributed_node.py
-
-# Terminal 3
-NODE_ID=node_2 SCHEDULER_HOST=localhost python distributed_node.py
-```
-
-#### 3. Execute Workflow
-
-```bash
-python enhanced_distributed_executor.py
-```
-
-### Option 3: Mixed Mode
-
-Run scheduler locally, nodes in Docker:
-
-```bash
-# Start scheduler locally
+# Terminal 1: Start scheduler (go to Core System folder)
+cd "Core System"
 python scheduler_server.py 8000
 
-# Start nodes in Docker
-docker-compose up -d node_0 node_1 node_2 node_3 node_4
+# Terminal 2-6: Start nodes (stay in Core System folder)
+python distributed_node.py node_0
+python distributed_node.py node_1
+python distributed_node.py node_2
+python distributed_node.py node_3
+python distributed_node.py node_4
+
+# Terminal 7: Monitor system (go to project root)
+cd ..
+python Scripts/monitor.py --interval 3
+```
+
+### Option 3: Automated Local
+
+```bash
+# From project root
+python Scripts/run_local.py --nodes 5 --threshold 3 --port 8000
+
+# Custom configuration
+python Scripts/run_local.py --nodes 10 --threshold 5 --port 8001
+```
+
+## Task Types
+
+The system schedules general computational tasks while maintaining cryptographic security on each node. The cryptographic components (MFKDF, SSS, HOTP, Merkle Trees, MPC) run automatically on every node for security purposes.
+
+### Mathematical Computing
+```python
+# Prime generation
+{
+    "task_type": "prime_generation",
+    "data": {
+        "range_start": 1000000,
+        "range_end": 1010000,
+        "count": 100
+    }
+}
+
+# Matrix multiplication
+{
+    "task_type": "matrix_multiplication",
+    "data": {
+        "matrix_size": 1000,
+        "iterations": 5
+    }
+}
+
+# Fibonacci calculation
+{
+    "task_type": "fibonacci_calculation",
+    "data": {
+        "n": 50000,
+        "modulo": 1000000007
+    }
+}
+```
+
+### Data Processing
+```python
+# Large array sorting
+{
+    "task_type": "large_array_sort",
+    "data": {
+        "array_size": 1000000,
+        "algorithm": "quicksort"
+    }
+}
+
+# Pattern search
+{
+    "task_type": "pattern_search",
+    "data": {
+        "text_size": 10000000,
+        "pattern": "cryptography",
+        "algorithm": "kmp"
+    }
+}
+
+# Data compression
+{
+    "task_type": "data_compression",
+    "data": {
+        "data_size": 5000000,
+        "algorithm": "lz77"
+    }
+}
+```
+
+### Image Processing
+```python
+# Image filtering
+{
+    "task_type": "image_processing",
+    "data": {
+        "operation": "gaussian_blur",
+        "image_size": "1920x1080",
+        "kernel_size": 15
+    }
+}
+
+# Object detection
+{
+    "task_type": "object_detection",
+    "data": {
+        "algorithm": "edge_detection",
+        "image_count": 50
+    }
+}
+```
+
+### Network Operations
+```python
+# Web crawling
+{
+    "task_type": "web_crawling",
+    "data": {
+        "urls": ["https://example.com"],
+        "depth": 2
+    }
+}
+
+# API data fetching
+{
+    "task_type": "api_data_fetch",
+    "data": {
+        "endpoint": "https://jsonplaceholder.typicode.com/posts",
+        "count": 100
+    }
+}
+```
+
+### Machine Learning
+```python
+# Linear regression
+{
+    "task_type": "linear_regression",
+    "data": {
+        "dataset_size": 10000,
+        "features": 20,
+        "iterations": 1000
+    }
+}
+
+# K-means clustering
+{
+    "task_type": "kmeans_clustering",
+    "data": {
+        "data_points": 50000,
+        "clusters": 10,
+        "dimensions": 5
+    }
+}
+```
+
+### File Operations
+```python
+# File hashing
+{
+    "task_type": "file_hashing",
+    "data": {
+        "file_size": 100000000,
+        "algorithm": "sha256"
+    }
+}
+
+# File encryption
+{
+    "task_type": "file_encryption",
+    "data": {
+        "file_size": 50000000,
+        "algorithm": "aes256"
+    }
+}
+```
+
+### Scientific Computing
+```python
+# Monte Carlo simulation
+{
+    "task_type": "monte_carlo_simulation",
+    "data": {
+        "iterations": 1000000,
+        "variables": 3
+    }
+}
+
+# Statistical analysis
+{
+    "task_type": "statistical_analysis",
+    "data": {
+        "dataset_size": 100000,
+        "operations": ["mean", "std", "correlation"]
+    }
+}
 ```
 
 ## API Endpoints
 
 ### Scheduler API
 
-The scheduler exposes the following REST endpoints:
-
-#### Node Management
-
-```http
-POST /heartbeat
-Content-Type: application/json
-
-{
-  "node_id": "node_0",
-  "timestamp": 1640995200.0,
-  "current_load": 2,
-  "max_capacity": 5,
-  "status": "active",
-  "performance_metrics": {
-    "tasks_completed": 10,
-    "tasks_failed": 0,
-    "average_execution_time": 45.2
-  }
-}
-```
-
-#### Task Management
-
-```http
-GET /get_task/{node_id}
-# Returns next task assignment for the node
-
-POST /update_task_status
-Content-Type: application/json
-
-{
-  "task_id": "key_generation_1",
-  "node_id": "node_0",
-  "status": "completed",
-  "timestamp": 1640995200.0,
-  "execution_time": 42.5
-}
-```
-
-#### System Monitoring
-
-```http
-GET /statistics
-# Returns system-wide statistics
-
-GET /nodes
-# Returns information about all nodes
-
-GET /tasks
-# Returns information about all tasks
-
-POST /reschedule
-# Manually trigger task rescheduling
-```
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/heartbeat` | POST | Node heartbeat registration |
+| `/get_task/<node_id>` | GET | Request task assignment |
+| `/update_task_status` | POST | Report task completion |
+| `/statistics` | GET | System statistics |
+| `/nodes` | GET | Node information |
+| `/tasks` | GET | Task information |
+| `/reschedule` | POST | Trigger manual rescheduling |
 
 ### Example API Usage
 
 ```bash
-# Check system status
+# Get system statistics
 curl http://localhost:8000/statistics
 
-# Get node information
+# Get node information  
 curl http://localhost:8000/nodes
 
-# Get task information
+# Get task status
 curl http://localhost:8000/tasks
 
-# Trigger manual rescheduling
+# Request task for node
+curl http://localhost:8000/get_task/node_0
+
+# Trigger rescheduling
 curl -X POST http://localhost:8000/reschedule
+
+# Send heartbeat (from node)
+curl -X POST http://localhost:8000/heartbeat \
+  -H "Content-Type: application/json" \
+  -d '{"node_id": "node_0", "timestamp": 1634567890, "current_load": 2, "max_capacity": 5, "status": "active"}'
+
+# Update task status (from node)
+curl -X POST http://localhost:8000/update_task_status \
+  -H "Content-Type: application/json" \
+  -d '{"task_id": "task_123", "status": "completed", "execution_time": 45.2}'
 ```
 
-## Monitoring and Debugging
+## Monitoring
 
-### 1. Real-time Monitoring
+### Real-time Dashboard
 
 ```bash
-# View all logs
-docker-compose logs -f
+# Start monitoring dashboard (from project root)
+python Scripts/monitor.py
+
+# Custom monitoring
+python Scripts/monitor.py --host localhost --port 8000 --interval 5
+```
+
+### Dashboard Features
+
+- **System Statistics**: Task completion rates, node utilization
+- **Node Status**: Active/inactive nodes, current loads, specializations
+- **Task Progress**: Pending, running, completed, failed tasks
+- **Performance Metrics**: Average execution times, throughput
+- **Security Status**: Cryptographic verification, authentication status
+
+### Log Files
+
+```bash
+# View logs in real-time (Docker)
+docker-compose -f Infrastructure/docker-compose.yaml logs -f
 
 # View specific service logs
-docker-compose logs -f scheduler
-docker-compose logs -f node_0
+docker-compose -f Infrastructure/docker-compose.yaml logs scheduler
+docker-compose -f Infrastructure/docker-compose.yaml logs node_0
 
-# Monitor system resources
-docker stats
+# For local development (logs stored in logs/ folder)
+tail -f logs/scheduler.log
+tail -f logs/node_0.log
 ```
 
-### 2. System Status Dashboard
+## Security Features
 
-Access the monitoring endpoints:
+### Cryptographic Infrastructure (Automatic on Every Node)
 
-```bash
-# System statistics
-curl http://localhost:8000/statistics | jq
+1. **Multi-Factor Key Derivation Function (MFKDF)**
+   - Generates deterministic RSA keys using multiple authentication factors
+   - Factors: biometric, password, hardware token, location, time window
+   - Threshold-based factor combination (minimum 3 out of 5)
 
-# Node status
-curl http://localhost:8000/nodes | jq
+2. **Shamir's Secret Sharing (SSS)**
+   - Distributes private keys across multiple nodes
+   - Configurable threshold (default 3 out of 5 nodes)
+   - Secure reconstruction without revealing individual shares
 
-# Task status
-curl http://localhost:8000/tasks | jq
-```
+3. **HMAC-based One-Time Passwords (HOTP)**
+   - Time-synchronized authentication between nodes
+   - Prevents replay attacks
+   - Rolling counter mechanism
 
-### 3. Debug Mode
+4. **Merkle Tree Verification**
+   - Data integrity proofs for all shared information
+   - Tamper detection and verification
+   - Efficient verification without revealing data
 
-Enable debug logging:
+5. **Secure Multi-Party Computation (MPC)**
+   - Secure computations without revealing private data
+   - Threshold-based computation verification
+   - Cryptographic proof generation
 
-```bash
-# Set environment variable
-export LOG_LEVEL=DEBUG
+### Security Best Practices
 
-# Or modify docker-compose.yaml
-environment:
-  - LOG_LEVEL=DEBUG
-```
-
-### 4. Performance Monitoring
-
-```bash
-# Monitor container resource usage
-docker stats --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"
-
-# Check task execution times
-curl http://localhost:8000/statistics | jq '.average_completion_time'
-```
-
-## Security Considerations
-
-### 1. Network Security
-
-- All communication uses HTTPS in production
-- Firewall rules restrict access to scheduler ports
-- VPN or private networks recommended for multi-host deployments
-
-### 2. Cryptographic Security
-
-- Master seeds are generated using cryptographically secure random generators
-- Private keys never leave their assigned nodes in plaintext
-- All secret sharing uses proven cryptographic schemes
-
-### 3. Authentication Factors
-
-Configure MFKDF factors based on your security requirements:
-
-```python
-# Available factors
-factors = [
-    'biometric',        # Fingerprint, face recognition
-    'password',         # User password
-    'hardware_token',   # Hardware security key
-    'location',         # GPS coordinates
-    'time_window'       # Time-based constraints
-]
-```
-
-### 4. Access Control
-
-- Implement role-based access control (RBAC)
-- Use API keys for scheduler access
-- Regular security audits and key rotation
+- **Never commit cryptographic keys**: All keys are generated at runtime
+- **Secure communication**: All inter-node communication is authenticated
+- **Threshold security**: System remains secure even if minority of nodes are compromised
+- **Audit trails**: All cryptographic operations are logged and verifiable
+- **Perfect forward secrecy**: Keys are regenerated periodically
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. Scheduler Not Starting
+#### 1. Docker Issues
 
 ```bash
-# Check port availability
-netstat -tlnp | grep 8000
+# Permission denied
+sudo usermod -aG docker $USER
+newgrp docker
 
-# Check Docker logs
-docker-compose logs scheduler
+# Port already in use
+docker-compose -f Infrastructure/docker-compose.yaml down
+netstat -tulpn | grep :8000
+kill -9 <process_id>
 
-# Verify configuration
-docker-compose config
+# Out of memory
+docker system prune -a
+docker-compose -f Infrastructure/docker-compose.yaml up --build --scale node_0=2  # Reduce nodes
 ```
 
-#### 2. Nodes Not Connecting
+#### 2. Node Connection Issues
 
 ```bash
-# Verify network connectivity
-docker-compose exec node_0 ping scheduler
+# Check network connectivity
+docker network ls
+docker network inspect infrastructure_crypto_network
 
-# Check environment variables
-docker-compose exec node_0 env | grep SCHEDULER
+# Restart specific node
+docker-compose -f Infrastructure/docker-compose.yaml restart node_0
 
-# Restart networking
-docker-compose down && docker-compose up -d
+# Check node logs
+docker-compose -f Infrastructure/docker-compose.yaml logs node_0
 ```
 
-#### 3. Task Failures
+#### 3. Task Scheduling Issues
 
 ```bash
-# Check task status
-curl http://localhost:8000/tasks | jq '.[] | select(.status == "failed")'
+# Check scheduler status
+curl http://localhost:8000/statistics
 
-# Review node logs
-docker-compose logs node_0 | grep ERROR
+# Manual reschedule
+curl -X POST http://localhost:8000/reschedule
 
-# Check resource utilization
-docker stats
+# Check task queue
+curl http://localhost:8000/tasks
 ```
 
 #### 4. Performance Issues
 
 ```bash
-# Monitor task execution times
-curl http://localhost:8000/statistics | jq '.average_completion_time'
+# Monitor resource usage
+docker stats
 
-# Check node load distribution
-curl http://localhost:8000/nodes | jq '.[] | {id: .node_id, load: .load_factor}'
+# Reduce concurrent tasks per node
+# Edit Infrastructure/.env: NUM_NODES=3, or reduce task complexity
 
-# Scale up nodes if needed
-docker-compose up -d --scale node_0=3
+# Check for deadlocks
+python Scripts/monitor.py --interval 1
 ```
 
-### System Recovery
-
-#### 1. Graceful Restart
+#### 5. Module Import Issues
 
 ```bash
-# Stop all services
-docker-compose down
+# If running locally and getting import errors
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
-# Clean up resources
-docker system prune -f
-
-# Restart system
-docker-compose up -d
+# Or add to your shell profile
+echo 'export PYTHONPATH="${PYTHONPATH}:$(pwd)"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-#### 2. Reset System State
+### Debug Mode
 
 ```bash
-# Remove all containers and volumes
-docker-compose down -v
+# Enable debug logging
+export LOG_LEVEL=DEBUG
 
-# Rebuild images
-docker-compose build --no-cache
+# Run with debug (if debug compose file exists)
+docker-compose -f Infrastructure/docker-compose.yaml -f Infrastructure/docker-compose.debug.yaml up
 
-# Start fresh
-docker-compose up -d
+# Local debug
+cd "Core System"
+python scheduler_server.py --debug
 ```
 
-### Log Analysis
-
-#### 1. Structured Logging
-
-All components use structured logging:
+### Health Checks
 
 ```bash
-# Filter by severity
-docker-compose logs | grep ERROR
+# System health
+curl http://localhost:8000/statistics
 
-# Filter by component
-docker-compose logs scheduler | grep "Task assignment"
+# Node health
+curl http://localhost:8000/nodes
 
-# Filter by time
-docker-compose logs --since="2023-01-01T00:00:00" --until="2023-01-01T23:59:59"
+# Task health
+curl http://localhost:8000/tasks
+
+# Manual health check
+python Scripts/test_system.py --health-check
 ```
 
-#### 2. Performance Metrics
+## Development
+
+### Setting Up Development Environment
 
 ```bash
-# Task completion rates
-curl http://localhost:8000/statistics | jq '.completed_tasks / .total_tasks'
+# Clone and setup
+git clone <repository-url>
+cd "Private Key Security"
 
-# Node utilization
-curl http://localhost:8000/nodes | jq 'map(.load_factor) | add / length'
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+# or
+venv\Scripts\activate  # Windows
 
-# System throughput
-curl http://localhost:8000/statistics | jq '.completed_tasks'
+# Install dependencies from Infrastructure folder
+pip install -r Infrastructure/requirements.txt
+
+# Install development dependencies
+pip install pytest black flake8 mypy
+
+# Pre-commit setup (if .pre-commit-config.yaml exists)
+pip install pre-commit
+pre-commit install
 ```
 
-## Advanced Configuration
+### Running Tests
 
-### 1. Custom Task Types
+```bash
+# Unit tests (if tests directory exists)
+python -m pytest tests/ -v
 
-Add new cryptographic operations:
+# Integration tests
+python Scripts/test_system.py
 
+# Performance tests
+python Scripts/test_system.py --performance
+
+# Load testing
+python Scripts/test_system.py --load-test --nodes 10
+```
+
+### Code Quality
+
+```bash
+# Format code
+black .
+
+# Lint code
+flake8 .
+
+# Type checking
+mypy .
+
+# Security scan
+bandit -r .
+```
+
+### Adding New Task Types
+
+1. **Define task in `Core System/scheduler_server.py`**:
 ```python
-# In task_scheduler.py
-def register_custom_task_handler(self, task_type: str, handler: Callable):
-    self.task_handlers[task_type] = handler
-
-# Example: Digital signature task
-def handle_digital_signature(task: CryptoTask, node_id: str) -> Dict[str, Any]:
-    # Implementation here
-    pass
+CryptoTask(
+    task_id="my_custom_task",
+    task_type="custom_computation",
+    data={"param1": "value1"},
+    priority=TaskPriority.MEDIUM,
+    computation_cost=20.0
+)
 ```
 
-### 2. Load Balancing Strategies
-
-Customize the HEFT algorithm:
-
+2. **Implement handler in `Core System/distributed_node.py`**:
 ```python
-# In task_scheduler.py
-def custom_node_selection(self, task: CryptoTask) -> str:
-    # Custom load balancing logic
-    pass
+def _execute_custom_computation(self, task: CryptoTask) -> Dict[str, Any]:
+    # Your implementation here
+    return {"status": "success", "result": "computed_value"}
 ```
 
-### 3. Fault Tolerance
+3. **Add to task type mapping**:
+```python
+def _execute_task_by_type(self, task: CryptoTask) -> Dict[str, Any]:
+    if task.task_type == "custom_computation":
+        return self._execute_custom_computation(task)
+    # ... existing handlers
+```
 
-Configure automatic failover:
+### Performance Tuning
 
 ```yaml
-# In docker-compose.yaml
+# Infrastructure/docker-compose.yaml
 services:
-  node_0:
-    restart: unless-stopped
+  scheduler:
     deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+  
+  node_0:
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
 ```
 
-## Testing
-
-### 1. Unit Tests
+### Monitoring and Metrics
 
 ```bash
-# Run all tests
-python -m pytest tests/
+# Enable detailed metrics
+export ENABLE_METRICS=true
 
-# Run specific test categories
-python -m pytest tests/test_cryptographic.py
-python -m pytest tests/test_scheduling.py
-python -m pytest tests/test_integration.py
+# Custom monitoring with export
+python Scripts/monitor.py --detailed --export-json metrics.json
+
+# Performance profiling
+cd "Core System"
+python -m cProfile -o profile.prof scheduler_server.py
+# Install snakeviz: pip install snakeviz
+snakeviz profile.prof
 ```
 
-### 2. Integration Tests
+### Working with Folders
 
 ```bash
-# Test complete workflow
-python test_system.py
+# Navigate to different components
+cd "Core System"           # Main system files
+cd "Cryptographic Modules" # Crypto implementations
+cd "Infrastructure"        # Docker and deployment files
+cd "Scripts"              # Utility scripts
 
-# Test with different node configurations
-NODE_COUNT=3 THRESHOLD=2 python test_system.py
+# Running components from correct locations
+cd "Core System" && python scheduler_server.py 8000
+cd "Core System" && python distributed_node.py node_0
+python Scripts/monitor.py
 ```
 
-### 3. Load Testing
-
-```bash
-# Stress test the system
-python scripts/load_test.py --tasks=100 --nodes=5 --duration=300
-```
-
-## Production Deployment
-
-### 1. Environment Setup
-
-```bash
-# Create production environment file
-cp .env.example .env.production
-
-# Update configuration for production
-# - Set secure random seeds
-# - Configure proper hostnames
-# - Enable TLS/SSL
-# - Set resource limits
-```
-
-### 2. Security Hardening
-
-```bash
-# Use secrets management
-docker swarm init
-echo "your-master-seed" | docker secret create master_seed -
-
-# Enable TLS
-# Configure reverse proxy (nginx/traefik)
-# Set up monitoring (Prometheus/Grafana)
-```
-
-### 3. Scaling
-
-```bash
-# Docker Swarm deployment
-docker stack deploy -c docker-stack.yml crypto-system
-
-# Kubernetes deployment
-kubectl apply -f k8s/
-```
-
-## Contributing
+### Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes and add tests
-4. Run the test suite: `python -m pytest`
-5. Submit a pull request
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-### Development Guidelines
+### Project Structure for New Features
 
-- Follow PEP 8 style guidelines
-- Add comprehensive tests for new features
-- Update documentation for API changes
-- Use type hints for all function signatures
+```
+feature/
+├── feature_module.py          # Main implementation
+├── tests/
+│   ├── test_feature.py       # Unit tests
+│   └── test_integration.py   # Integration tests
+├── docs/
+│   └── feature_doc.md        # Documentation
+└── examples/
+    └── feature_example.py    # Usage examples
+```
 
 ## License
 
@@ -630,20 +784,27 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Support
 
-For technical support:
-- Create an issue on GitHub
-- Check the troubleshooting section
-- Review the API documentation
+- **Issues**: Create GitHub issues for bugs and feature requests
+- **Discussions**: Use GitHub discussions for questions
+- **Documentation**: Check this README and inline code documentation
+- **Examples**: See `examples/` directory for usage examples
 
 ## Changelog
 
-### v1.0.0 (2024-01-01)
-- Initial release
-- MFKDF implementation
-- HEFT scheduling algorithm
+### Version 1.0.0
+- Initial release with HEFT scheduling
+- Full MFKDF, SSS, HOTP, Merkle Tree, MPC implementation
 - Docker containerization
-- REST API interface
+- Real-time monitoring dashboard
+- Comprehensive test suite
+- Organized folder structure for better maintainability
 
----
-
-**Note**: This is a research prototype. For production use, implement additional security measures, comprehensive testing, and professional security audits.
+### Roadmap
+- [ ] Kubernetes deployment
+- [ ] Advanced fault tolerance
+- [ ] Performance optimizations
+- [ ] Additional cryptographic algorithms
+- [ ] Web-based monitoring UI
+- [ ] Distributed storage backend
+- [ ] Enhanced testing framework
+- [ ] Configuration management improvements

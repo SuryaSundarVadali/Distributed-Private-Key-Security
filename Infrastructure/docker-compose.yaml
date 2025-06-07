@@ -8,12 +8,21 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - PYTHONPATH=/app
+      - NUM_NODES=5
+      - THRESHOLD=3
+      - SCHEDULER_PORT=8000
+      - HEARTBEAT_INTERVAL=10
+      - LOG_LEVEL=INFO
     volumes:
-      - .:/app
+      - ./logs:/app/logs
     networks:
       - crypto_network
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/statistics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   node_0:
     build:
@@ -23,14 +32,18 @@ services:
       - NODE_ID=node_0
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
-      - PYTHONPATH=/app
-    volumes:
-      - .:/app
-    networks:
-      - crypto_network
+      - LOG_LEVEL=INFO
     depends_on:
       - scheduler
-    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - crypto_network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
 
   node_1:
     build:
@@ -40,14 +53,18 @@ services:
       - NODE_ID=node_1
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
-      - PYTHONPATH=/app
-    volumes:
-      - .:/app
-    networks:
-      - crypto_network
+      - LOG_LEVEL=INFO
     depends_on:
       - scheduler
-    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - crypto_network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
 
   node_2:
     build:
@@ -57,14 +74,18 @@ services:
       - NODE_ID=node_2
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
-      - PYTHONPATH=/app
-    volumes:
-      - .:/app
-    networks:
-      - crypto_network
+      - LOG_LEVEL=INFO
     depends_on:
       - scheduler
-    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - crypto_network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
 
   node_3:
     build:
@@ -74,14 +95,18 @@ services:
       - NODE_ID=node_3
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
-      - PYTHONPATH=/app
-    volumes:
-      - .:/app
-    networks:
-      - crypto_network
+      - LOG_LEVEL=INFO
     depends_on:
       - scheduler
-    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - crypto_network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
 
   node_4:
     build:
@@ -91,15 +116,26 @@ services:
       - NODE_ID=node_4
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
-      - PYTHONPATH=/app
-    volumes:
-      - .:/app
-    networks:
-      - crypto_network
+      - LOG_LEVEL=INFO
     depends_on:
       - scheduler
-    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - crypto_network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
 
 networks:
   crypto_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  logs:
+    driver: local

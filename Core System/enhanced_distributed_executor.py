@@ -5,15 +5,30 @@ Integrates MFKDF, SSS, HOTP, Merkle Trees, and MPC with intelligent task distrib
 import time
 import hashlib
 import secrets
+import sys
 from typing import Dict, Any
+from pathlib import Path
+
+# Add the parent directory and Cryptographic Modules to Python path
+parent_dir = Path(__file__).parent.parent
+crypto_modules_dir = parent_dir / "Cryptographic Modules"
+sys.path.append(str(parent_dir))
+sys.path.append(str(crypto_modules_dir))
 
 from task_scheduler import HEFTScheduler, CryptoTask, NodeCapabilities, TaskPriority
-from mfkdf import DistributedMFKDF
-from key_generation import MFKDFDeterministicKeyGenerator
-from secret_sharing import ShamirSecretSharing
-from hotp import HOTP
-from merkle_tree import MerkleTree
-from mpc import SecureMultiPartyComputation, MPCNode
+
+# Import from Cryptographic Modules folder
+try:
+    from mfkdf import DistributedMFKDF
+    from key_generation import MFKDFDeterministicKeyGenerator
+    from secret_sharing import ShamirSecretSharing
+    from hotp import HOTP
+    from merkle_tree import MerkleTree
+    from mpc import SecureMultiPartyComputation, MPCNode
+except ImportError as e:
+    print(f"Error importing cryptographic modules: {e}")
+    print("Please ensure all cryptographic modules are in the 'Cryptographic Modules' folder")
+    sys.exit(1)
 
 
 class DistributedCryptoExecutor:
@@ -180,7 +195,6 @@ class DistributedCryptoExecutor:
         
         # Setup MFKDF for key generation
         generator = MFKDFDeterministicKeyGenerator(node_id)
-        mfkdf_system = generator.setup_authentication_factors(self.master_seed)
         
         # Generate RSA key
         active_factors = task.data['active_factors']
@@ -422,4 +436,39 @@ class DistributedCryptoExecutor:
         print("=" * 55)
         
         # System statistics
-        # filepath: c:\Surya\Blockchain\Research\Private Key Security\distributed_crypto_executor.py
+        stats = self.scheduler.get_scheduler_status()
+        print(f"Total Tasks: {stats['total_tasks']}")
+        print(f"Completed: {stats['completed_tasks']}")
+        print(f"Failed: {stats['failed_tasks']}")
+        
+        # Cryptographic verification
+        print("\nCryptographic Verification:")
+        print(f"Master Key Generated: {'✅' if 'master_private_key' in self.global_state else '❌'}")
+        print(f"Shares Distributed: {'✅' if self.global_state['private_key_shares'] else '❌'}")
+        print(f"Merkle Tree Created: {'✅' if self.global_state['merkle_tree'] else '❌'}")
+        print(f"MPC Computation: {'✅' if self.global_state['mpc_results'] else '❌'}")
+        
+        # Security summary
+        print("\nSecurity Summary:")
+        if self.global_state['private_key_shares']:
+            print(f"- {len(self.global_state['private_key_shares'])} secret shares created")
+        if self.global_state.get('hotp_tokens'):
+            print(f"- HOTP tokens generated for {len(self.global_state['hotp_tokens'])} nodes")
+        if self.global_state['merkle_tree']:
+            print(f"- Merkle tree root: {self.global_state['merkle_tree'].root.hash_value.hex()[:16]}...")
+
+
+def main():
+    """Main execution function"""
+    config = {
+        'num_nodes': 5,
+        'threshold': 3,
+        'heartbeat_interval': 10.0
+    }
+    
+    executor = DistributedCryptoExecutor(config)
+    executor.start_execution()
+
+
+if __name__ == "__main__":
+    main()
