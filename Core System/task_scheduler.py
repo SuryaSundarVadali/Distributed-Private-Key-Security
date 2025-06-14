@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 import logging
 
-
 class TaskStatus(Enum):
     PENDING = "pending"
     ASSIGNED = "assigned" 

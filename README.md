@@ -74,18 +74,27 @@ chmod +x Scripts/*.py
 
 ### 2. Docker Deployment (Recommended)
 
+**Note**: Before running Docker, ensure you have the required Docker files in the Infrastructure folder:
+- `docker-compose.yaml`
+- `Dockerfile.scheduler`
+- `Dockerfile.node`
+- `requirements.txt`
+
 ```bash
-# Start the entire system (Infrastructure folder contains Docker files)
-docker-compose up --build
+# Navigate to project root
+cd "Private Key Security"
+
+# Start the entire system (Docker files are in Infrastructure/)
+docker-compose -f Infrastructure/docker-compose.yaml up --build
 
 # Or run in background
-docker-compose up --build -d
+docker-compose -f Infrastructure/docker-compose.yaml up --build -d
 
 # Check logs
-docker-compose logs -f
+docker-compose -f Infrastructure/docker-compose.yaml logs -f
 
 # Stop system
-docker-compose down
+docker-compose -f Infrastructure/docker-compose.yaml down
 ```
 
 ### 3. Local Development Setup
@@ -103,7 +112,11 @@ source venv/bin/activate
 # Install dependencies (Infrastructure folder contains requirements.txt)
 pip install -r Infrastructure/requirements.txt
 
-# Run locally
+# Run enhanced distributed executor
+cd "Core System"
+python enhanced_distributed_executor.py
+
+# Or run individual components
 python Scripts/run_local.py --nodes 5 --threshold 3
 ```
 
@@ -178,11 +191,16 @@ Nodes automatically specialize in different task types based on their ID:
 
 ### Option 1: Docker (Production-like)
 
+**Important**: Before using Docker, you need the Infrastructure files. If they don't exist, use Option 2 or 3 first.
+
 ```bash
 # Navigate to project root
 cd "Private Key Security"
 
-# Start all services (Docker files are in Infrastructure/)
+# Check if Infrastructure files exist
+ls Infrastructure/
+
+# If Infrastructure files exist, start the system
 docker-compose -f Infrastructure/docker-compose.yaml up --build
 
 # Scale nodes (optional)
@@ -196,7 +214,9 @@ docker-compose -f Infrastructure/docker-compose.yaml logs node_0
 docker-compose -f Infrastructure/docker-compose.yaml down -v
 ```
 
-### Option 2: Local Development
+**If Docker files don't exist**, create them manually or use the local options below.
+
+### Option 2: Local Development (Manual)
 
 ```bash
 # Terminal 1: Start scheduler (go to Core System folder)
@@ -215,7 +235,23 @@ cd ..
 python Scripts/monitor.py --interval 3
 ```
 
-### Option 3: Automated Local
+### Option 3: Enhanced Distributed Executor (Recommended)
+
+```bash
+# Navigate to Core System folder
+cd "Core System"
+
+# Run the main system (includes cryptographic infrastructure)
+python enhanced_distributed_executor.py
+
+# This will:
+# 1. Initialize cryptographic infrastructure on all nodes
+# 2. Start the HEFT scheduler
+# 3. Create and distribute computational tasks
+# 4. Monitor execution and provide security verification
+```
+
+### Option 4: Automated Local (if Scripts exist)
 
 ```bash
 # From project root
@@ -521,6 +557,11 @@ tail -f logs/node_0.log
 #### 1. Docker Issues
 
 ```bash
+# If Docker files don't exist in Infrastructure folder
+echo "Docker files missing. Use local execution instead:"
+cd "Core System"
+python enhanced_distributed_executor.py
+
 # Permission denied
 sudo usermod -aG docker $USER
 newgrp docker
@@ -532,24 +573,52 @@ kill -9 <process_id>
 
 # Out of memory
 docker system prune -a
-docker-compose -f Infrastructure/docker-compose.yaml up --build --scale node_0=2  # Reduce nodes
+# Reduce nodes if using Docker
+docker-compose -f Infrastructure/docker-compose.yaml up --build --scale node_0=2
 ```
 
-#### 2. Node Connection Issues
+#### 2. Module Import Issues
 
 ```bash
-# Check network connectivity
-docker network ls
-docker network inspect infrastructure_crypto_network
+# If running locally and getting import errors
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
-# Restart specific node
-docker-compose -f Infrastructure/docker-compose.yaml restart node_0
+# Or for Core System folder
+cd "Core System"
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/.."
 
-# Check node logs
-docker-compose -f Infrastructure/docker-compose.yaml logs node_0
+# Or add to your shell profile
+echo 'export PYTHONPATH="${PYTHONPATH}:$(pwd)"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-#### 3. Task Scheduling Issues
+#### 3. Missing Cryptographic Modules
+
+```bash
+# Check if cryptographic modules exist
+ls "Cryptographic Modules/"
+
+# If modules are missing, create placeholder files or:
+# 1. Implement the modules based on the import statements
+# 2. Use the enhanced_distributed_executor.py which handles missing imports
+# 3. Comment out missing imports for testing
+```
+
+#### 4. Node Connection Issues
+
+```bash
+# Check if scheduler is running
+curl http://localhost:8000/statistics
+
+# If using local execution, start scheduler first
+cd "Core System"
+python scheduler_server.py 8000
+
+# Then start nodes in separate terminals
+python distributed_node.py node_0
+```
+
+#### 5. Task Scheduling Issues
 
 ```bash
 # Check scheduler status
@@ -562,41 +631,17 @@ curl -X POST http://localhost:8000/reschedule
 curl http://localhost:8000/tasks
 ```
 
-#### 4. Performance Issues
-
-```bash
-# Monitor resource usage
-docker stats
-
-# Reduce concurrent tasks per node
-# Edit Infrastructure/.env: NUM_NODES=3, or reduce task complexity
-
-# Check for deadlocks
-python Scripts/monitor.py --interval 1
-```
-
-#### 5. Module Import Issues
-
-```bash
-# If running locally and getting import errors
-export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-
-# Or add to your shell profile
-echo 'export PYTHONPATH="${PYTHONPATH}:$(pwd)"' >> ~/.bashrc
-source ~/.bashrc
-```
-
 ### Debug Mode
 
 ```bash
 # Enable debug logging
 export LOG_LEVEL=DEBUG
 
-# Run with debug (if debug compose file exists)
-docker-compose -f Infrastructure/docker-compose.yaml -f Infrastructure/docker-compose.debug.yaml up
+# Run enhanced executor with debug
+cd "Core System"
+python enhanced_distributed_executor.py
 
 # Local debug
-cd "Core System"
 python scheduler_server.py --debug
 ```
 
@@ -612,7 +657,7 @@ curl http://localhost:8000/nodes
 # Task health
 curl http://localhost:8000/tasks
 
-# Manual health check
+# Manual health check (if Scripts exist)
 python Scripts/test_system.py --health-check
 ```
 
@@ -631,15 +676,14 @@ source venv/bin/activate  # Linux/macOS
 # or
 venv\Scripts\activate  # Windows
 
-# Install dependencies from Infrastructure folder
+# Install dependencies from Infrastructure folder (if exists)
 pip install -r Infrastructure/requirements.txt
 
 # Install development dependencies
-pip install pytest black flake8 mypy
+pip install pytest black flake8 mypy flask requests numpy
 
-# Pre-commit setup (if .pre-commit-config.yaml exists)
-pip install pre-commit
-pre-commit install
+# If requirements.txt doesn't exist, install manually:
+pip install flask requests cryptography numpy hashlib secrets threading time json pathlib
 ```
 
 ### Running Tests
@@ -648,14 +692,15 @@ pre-commit install
 # Unit tests (if tests directory exists)
 python -m pytest tests/ -v
 
-# Integration tests
+# Integration tests (if Scripts exist)
 python Scripts/test_system.py
 
-# Performance tests
+# Performance tests (if available)
 python Scripts/test_system.py --performance
 
-# Load testing
-python Scripts/test_system.py --load-test --nodes 10
+# Manual testing
+cd "Core System"
+python enhanced_distributed_executor.py
 ```
 
 ### Code Quality
@@ -676,69 +721,31 @@ bandit -r .
 
 ### Adding New Task Types
 
-1. **Define task in `Core System/scheduler_server.py`**:
+1. **Define task in `Core System/enhanced_distributed_executor.py`**:
 ```python
-CryptoTask(
-    task_id="my_custom_task",
-    task_type="custom_computation",
-    data={"param1": "value1"},
-    priority=TaskPriority.MEDIUM,
-    computation_cost=20.0
-)
-```
-
-2. **Implement handler in `Core System/distributed_node.py`**:
-```python
-def _execute_custom_computation(self, task: CryptoTask) -> Dict[str, Any]:
+def _handle_custom_computation(self, task: CryptoTask, node_id: str) -> Dict[str, Any]:
     # Your implementation here
     return {"status": "success", "result": "computed_value"}
 ```
 
-3. **Add to task type mapping**:
+2. **Add to task handler registration**:
 ```python
-def _execute_task_by_type(self, task: CryptoTask) -> Dict[str, Any]:
-    if task.task_type == "custom_computation":
-        return self._execute_custom_computation(task)
-    # ... existing handlers
+self._register_task_handlers():
+    handlers = {
+        # ... existing handlers
+        'custom_computation': self._handle_custom_computation
+    }
 ```
 
-### Performance Tuning
-
-```yaml
-# Infrastructure/docker-compose.yaml
-services:
-  scheduler:
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
-  
-  node_0:
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: '2.0'
-```
-
-### Monitoring and Metrics
-
-```bash
-# Enable detailed metrics
-export ENABLE_METRICS=true
-
-# Custom monitoring with export
-python Scripts/monitor.py --detailed --export-json metrics.json
-
-# Performance profiling
-cd "Core System"
-python -m cProfile -o profile.prof scheduler_server.py
-# Install snakeviz: pip install snakeviz
-snakeviz profile.prof
+3. **Create task in workflow**:
+```python
+custom_task = CryptoTask(
+    task_id="custom_task_1",
+    task_type="custom_computation",
+    data={"param1": "value1"},
+    priority=TaskPriority.MEDIUM,
+    computation_cost=2.0
+)
 ```
 
 ### Working with Folders
@@ -747,13 +754,77 @@ snakeviz profile.prof
 # Navigate to different components
 cd "Core System"           # Main system files
 cd "Cryptographic Modules" # Crypto implementations
-cd "Infrastructure"        # Docker and deployment files
-cd "Scripts"              # Utility scripts
+cd "Infrastructure"        # Docker and deployment files (if exists)
+cd "Scripts"              # Utility scripts (if exists)
 
 # Running components from correct locations
+cd "Core System" && python enhanced_distributed_executor.py
 cd "Core System" && python scheduler_server.py 8000
 cd "Core System" && python distributed_node.py node_0
+
+# Monitor from project root (if Scripts exist)
 python Scripts/monitor.py
+```
+
+### Creating Missing Infrastructure Files
+
+If Docker files are missing, create them:
+
+```bash
+# Create Infrastructure directory
+mkdir -p Infrastructure
+
+# Basic requirements.txt
+cat > Infrastructure/requirements.txt << EOF
+flask==2.3.3
+requests==2.31.0
+cryptography==41.0.7
+numpy==1.24.3
+pathlib
+threading
+hashlib
+secrets
+time
+json
+enum
+dataclasses
+typing
+logging
+EOF
+
+# Basic docker-compose.yaml
+cat > Infrastructure/docker-compose.yaml << EOF
+version: '3.8'
+services:
+  scheduler:
+    build:
+      context: ..
+      dockerfile: Infrastructure/Dockerfile.scheduler
+    ports:
+      - "8000:8000"
+    environment:
+      - SCHEDULER_PORT=8000
+      - LOG_LEVEL=INFO
+    networks:
+      - crypto_network
+
+  node_0:
+    build:
+      context: ..
+      dockerfile: Infrastructure/Dockerfile.node
+    environment:
+      - NODE_ID=node_0
+      - SCHEDULER_HOST=scheduler
+      - SCHEDULER_PORT=8000
+    depends_on:
+      - scheduler
+    networks:
+      - crypto_network
+
+networks:
+  crypto_network:
+    driver: bridge
+EOF
 ```
 
 ### Contributing
@@ -787,19 +858,19 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **Issues**: Create GitHub issues for bugs and feature requests
 - **Discussions**: Use GitHub discussions for questions
 - **Documentation**: Check this README and inline code documentation
-- **Examples**: See `examples/` directory for usage examples
+- **Examples**: See `Core System/enhanced_distributed_executor.py` for main usage
 
 ## Changelog
 
 ### Version 1.0.0
 - Initial release with HEFT scheduling
 - Full MFKDF, SSS, HOTP, Merkle Tree, MPC implementation
-- Docker containerization
-- Real-time monitoring dashboard
-- Comprehensive test suite
+- Enhanced distributed executor with cryptographic infrastructure
+- Comprehensive task scheduling system
 - Organized folder structure for better maintainability
 
 ### Roadmap
+- [ ] Complete Docker containerization setup
 - [ ] Kubernetes deployment
 - [ ] Advanced fault tolerance
 - [ ] Performance optimizations
@@ -808,3 +879,23 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [ ] Distributed storage backend
 - [ ] Enhanced testing framework
 - [ ] Configuration management improvements
+
+## Current System Status
+
+✅ **Working Components**:
+- Enhanced Distributed Executor (`Core System/enhanced_distributed_executor.py`)
+- Task Scheduler with HEFT algorithm
+- Cryptographic infrastructure (MFKDF, SSS, HOTP, Merkle Trees, MPC)
+- Multiple computational task types
+- Local execution capabilities
+
+🔧 **Needs Setup**:
+- Docker infrastructure files (can be created manually)
+- Scripts folder utilities (optional)
+- Complete cryptographic module implementations
+
+📚 **Quick Start Recommendation**:
+```bash
+cd "Core System"
+python enhanced_distributed_executor.py
+```
