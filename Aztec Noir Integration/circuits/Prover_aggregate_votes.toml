@@ -1,0 +1,28 @@
+# Prover.toml - Example inputs for aggregate_votes circuit
+# Modify these values for your use case
+
+# Binary votes: 1 = yes, 0 = no (must be 0 or 1)
+votes = [1, 1, 0, 1, 1, 1, 0, 0, 1, 1]
+
+# Threshold for approval (typically 2f+1 for Byzantine tolerance)
+# With 10 agents and f=3, threshold should be 7
+threshold = 7
+
+# Vote commitment hashes from Phase 1
+# In production, these would be actual hash values
+commitments = [
+    123456789012345678901234567890,
+    234567890123456789012345678901,
+    345678901234567890123456789012,
+    456789012345678901234567890123,
+    567890123456789012345678901234,
+    678901234567890123456789012345,
+    789012345678901234567890123456,
+    890123456789012345678901234567,
+    901234567890123456789012345678,
+    12345678901234567890123456789
+]
+
+# Expected Merkle root (computed from commitments)
+# This should match the root computed in the circuit
+expected_root = 999888777666555444333222111

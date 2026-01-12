@@ -1,10 +1,12 @@
 version: '3.8'
 
 services:
+  # Task Scheduler - Coordinates all DeFi agent tasks
   scheduler:
     build:
       context: .
       dockerfile: Dockerfile.scheduler
+    container_name: defi_scheduler
     ports:
       - "8000:8000"
     environment:
@@ -13,8 +15,13 @@ services:
       - SCHEDULER_PORT=8000
       - HEARTBEAT_INTERVAL=10
       - LOG_LEVEL=INFO
+      - ENVIRONMENT=production
+      - ENABLE_PBFT=true
+      - ENABLE_ZK_PROOFS=true
+      - ENABLE_SMPC=true
     volumes:
       - ./logs:/app/logs
+      - scheduler_data:/app/data
     networks:
       - crypto_network
     healthcheck:
@@ -23,111 +30,186 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    restart: unless-stopped
 
+  # DeFi Agent Nodes with Phase 1-4 capabilities
   node_0:
     build:
       context: .
       dockerfile: Dockerfile.node
+    container_name: defi_node_0
     environment:
       - NODE_ID=node_0
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
       - LOG_LEVEL=INFO
+      - ADAPTIVE_THRESHOLD=true
+      - THRESHOLD=140
+      - TOTAL_AGENTS=200
+      - ENABLE_PBFT=true
+      - ENABLE_ZK_PROOFS=true
+      - ENABLE_SMPC=true
     depends_on:
       - scheduler
     volumes:
       - ./logs:/app/logs
+      - node0_data:/app/data
     networks:
       - crypto_network
     deploy:
       resources:
         limits:
-          memory: 1G
-          cpus: '1.0'
+          memory: 2G
+          cpus: '1.5'
+    restart: unless-stopped
 
   node_1:
     build:
       context: .
       dockerfile: Dockerfile.node
+    container_name: defi_node_1
     environment:
       - NODE_ID=node_1
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
       - LOG_LEVEL=INFO
+      - ADAPTIVE_THRESHOLD=true
+      - THRESHOLD=140
+      - TOTAL_AGENTS=200
+      - ENABLE_PBFT=true
+      - ENABLE_ZK_PROOFS=true
+      - ENABLE_SMPC=true
     depends_on:
       - scheduler
     volumes:
       - ./logs:/app/logs
+      - node1_data:/app/data
     networks:
       - crypto_network
     deploy:
       resources:
         limits:
-          memory: 1G
-          cpus: '1.0'
+          memory: 2G
+          cpus: '1.5'
+    restart: unless-stopped
 
   node_2:
     build:
       context: .
       dockerfile: Dockerfile.node
+    container_name: defi_node_2
     environment:
       - NODE_ID=node_2
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
       - LOG_LEVEL=INFO
+      - ADAPTIVE_THRESHOLD=true
+      - THRESHOLD=140
+      - TOTAL_AGENTS=200
+      - ENABLE_PBFT=true
+      - ENABLE_ZK_PROOFS=true
+      - ENABLE_SMPC=true
     depends_on:
       - scheduler
     volumes:
       - ./logs:/app/logs
+      - node2_data:/app/data
     networks:
       - crypto_network
     deploy:
       resources:
         limits:
-          memory: 1G
-          cpus: '1.0'
+          memory: 2G
+          cpus: '1.5'
+    restart: unless-stopped
 
   node_3:
     build:
       context: .
       dockerfile: Dockerfile.node
+    container_name: defi_node_3
     environment:
       - NODE_ID=node_3
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
       - LOG_LEVEL=INFO
+      - ADAPTIVE_THRESHOLD=true
+      - THRESHOLD=140
+      - TOTAL_AGENTS=200
+      - ENABLE_PBFT=true
+      - ENABLE_ZK_PROOFS=true
+      - ENABLE_SMPC=true
     depends_on:
       - scheduler
     volumes:
       - ./logs:/app/logs
+      - node3_data:/app/data
     networks:
       - crypto_network
     deploy:
       resources:
         limits:
-          memory: 1G
-          cpus: '1.0'
+          memory: 2G
+          cpus: '1.5'
+    restart: unless-stopped
 
   node_4:
     build:
       context: .
       dockerfile: Dockerfile.node
+    container_name: defi_node_4
     environment:
       - NODE_ID=node_4
       - SCHEDULER_HOST=scheduler
       - SCHEDULER_PORT=8000
       - LOG_LEVEL=INFO
+      - ADAPTIVE_THRESHOLD=true
+      - THRESHOLD=140
+      - TOTAL_AGENTS=200
+      - ENABLE_PBFT=true
+      - ENABLE_ZK_PROOFS=true
+      - ENABLE_SMPC=true
     depends_on:
       - scheduler
     volumes:
       - ./logs:/app/logs
+      - node4_data:/app/data
     networks:
       - crypto_network
     deploy:
       resources:
         limits:
-          memory: 1G
-          cpus: '1.0'
+          memory: 2G
+          cpus: '1.5'
+    restart: unless-stopped
+
+  # Monitoring Service - Tracks system health and performance
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    container_name: defi_monitor
+    ports:
+      - "8080:8080"
+    environment:
+      - MONITOR_PORT=8080
+      - SCHEDULER_URL=http://scheduler:8000
+      - CHECK_INTERVAL=30
+      - ALERT_THRESHOLD=5
+      - LOG_LEVEL=INFO
+    depends_on:
+      - scheduler
+    volumes:
+      - ./logs:/app/logs
+      - monitor_data:/app/data
+    networks:
+      - crypto_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
 
 networks:
   crypto_network:
@@ -139,3 +221,10 @@ networks:
 volumes:
   logs:
     driver: local
+  scheduler_data:
+  node0_data:
+  node1_data:
+  node2_data:
+  node3_data:
+  node4_data:
+  monitor_data:

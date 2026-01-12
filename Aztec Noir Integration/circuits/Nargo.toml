@@ -1,0 +1,14 @@
+[package]
+name = "agent_coordination_circuits"
+type = "lib"
+authors = ["DeFi Agent Coordination Team"]
+compiler_version = ">=0.14.0"
+
+[dependencies]
+std = { git = "https://github.com/noir-lang/noir", tag = "v0.14.0" }
+
+[profile.dev]
+backend = "barretenberg"
+
+[profile.release]
+backend = "barretenberg"

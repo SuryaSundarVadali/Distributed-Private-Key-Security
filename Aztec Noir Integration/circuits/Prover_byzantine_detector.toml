@@ -1,0 +1,5 @@
+# Example Test Configuration for Byzantine Detector Circuit
+
+agent_states = [1, 1, 1, 2]  # 3 agents vote 1, 1 agent votes 2
+consensus_threshold = 3       # Need 3 for consensus
+isolation_levels = [0, 0, 0, 0]  # All agents start with no isolation
