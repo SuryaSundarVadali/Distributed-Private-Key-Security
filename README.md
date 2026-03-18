@@ -1378,6 +1378,54 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [ ] Distributed storage backend
 - [ ] Enhanced testing framework
 - [ ] Configuration management improvements
+- [x] Smart contract integration (Ethereum/Solidity)
+
+## 🔗 On-Chain Trust Layer (ERC-8004)
+
+The system now includes an Ethereum-based trust layer using the **ERC-8004 Trustless Agents** standard.
+
+### Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full data flow diagram.
+
+| Component | Purpose |
+|-----------|---------|
+| `SwarmMissionController.sol` | Mission lifecycle + ERC-1271 smart contract wallet |
+| `IIdentityRegistry.sol` | ERC-721 agent identity NFTs |
+| `IReputationRegistry.sol` | Tagged reputation feedback |
+| `IValidationRegistry.sol` | Validation request/response |
+| `eth_integration/` | Python bridge (web3.py) |
+
+### Smart Contract Testing (Foundry)
+
+```bash
+# Install forge-std (one-time)
+forge install foundry-rs/forge-std --no-git
+
+# Compile and test
+forge build
+forge test -vv
+```
+
+### Python Integration
+
+```bash
+# Install deps
+pip install web3 eth-account eth-abi
+
+# Run offline demo (no blockchain needed)
+python examples/eth_integration_demo.py
+
+# Run tests
+python -m pytest tests/test_eth_integration.py -v
+```
+
+### Configuration
+
+Copy `.env.example` to `.env` and configure:
+- `ETH_RPC_URL` — Ethereum RPC endpoint (default: Anvil localhost)
+- `DEPLOYER_PRIVATE_KEY` — Account private key for transactions
+- Contract addresses (filled after deployment)
 
 ## Current System Status
 
@@ -1387,6 +1435,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Cryptographic infrastructure (MFKDF, SSS, HOTP, Merkle Trees, MPC)
 - Multiple computational task types
 - Local execution capabilities
+- **ERC-8004 on-chain trust layer** (SwarmMissionController, registries, Python bridge)
 
 🔧 **Needs Setup**:
 - Docker infrastructure files (can be created manually)

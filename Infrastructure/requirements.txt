@@ -48,3 +48,8 @@ asyncio==3.4.3
 
 # Logging
 structlog==23.2.0
+
+# Ethereum / ERC-8004 Integration
+web3>=6.0.0
+eth-account>=0.10.0
+eth-abi>=4.0.0

@@ -311,6 +311,12 @@ keystore/
 mnemonic.*
 recovery_phrase.*
 private_keys/
+vault_keys/
+
+# Foundry / Solidity build artifacts
+# ===================================
+out/
+broadcast/
 
 # Build and deployment
 # ===================

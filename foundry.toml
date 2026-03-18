@@ -1,0 +1,16 @@
+[profile.default]
+src = "contracts"
+out = "out"
+libs = ["lib"]
+solc = "0.8.20"
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    "@contracts/=contracts/",
+]
+
+[profile.default.fmt]
+line_length = 120
+
+# Foundry test config
+[profile.default.fuzz]
+runs = 256
