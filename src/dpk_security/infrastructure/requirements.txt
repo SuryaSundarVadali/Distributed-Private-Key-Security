@@ -7,14 +7,14 @@ pycryptodome==3.19.0
 cryptography==41.0.7
 
 # Scientific Computing
-numpy==1.24.3
-scipy==1.11.4
+numpy>=1.26.0,<2.0
+scipy>=1.11.0
 
 # Data Processing
-pandas==2.0.3
+pandas>=2.0.3
 
 # Machine Learning (for ML tasks)
-scikit-learn==1.3.0
+scikit-learn>=1.3.0
 
 # Image Processing (for image tasks)
 Pillow==10.0.1
@@ -26,7 +26,7 @@ lxml==4.9.3
 
 # HTTP Requests
 httpx==0.25.0
-aiohttp==3.8.6
+aiohttp>=3.12.0
 
 # Testing
 pytest==7.4.2

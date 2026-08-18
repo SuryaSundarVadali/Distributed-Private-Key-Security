@@ -13,8 +13,9 @@ import hashlib
 import random
 import numpy as np
 from typing import Dict, List, Optional, Any
+from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 class TaskStatus(Enum):
     """Task execution status enum"""
@@ -24,24 +25,15 @@ class TaskStatus(Enum):
     FAILED = "failed"
     CANCELLED = "cancelled"
 
-# Add the parent directory and Cryptographic Modules to Python path
-parent_dir = Path(__file__).parent.parent
-crypto_modules_dir = parent_dir / "Cryptographic Modules"
-sys.path.append(str(parent_dir))
-sys.path.append(str(crypto_modules_dir))
+from dpk_security.core_system.task_scheduler import (
+    CryptoTask,
+    NodeCapabilities,
+    TaskPriority,
+)
+from dpk_security.crypto_modules.key_generation import DeterministicRSAKeyGenerator
+from dpk_security.crypto_modules.hotp import HOTP
+from dpk_security.logging_config import setup_logging
 
-from task_scheduler import CryptoTask, NodeCapabilities, TaskPriority
-
-try:
-    from key_generation import DeterministicRSAKeyGenerator
-    from hotp import HOTP
-
-except ImportError as e:
-    print(f"Error: Could not import cryptographic modules: {e}")
-    sys.exit(1)
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -863,30 +855,22 @@ class DistributedNode:
         }
 
 
-def main():
-    """Main function to run a distributed node"""
-    
-    # Get node configuration from environment or command line
-    node_id = os.environ.get('NODE_ID', sys.argv[1] if len(sys.argv) > 1 else 'node_0')
-    scheduler_host = os.environ.get('SCHEDULER_HOST', 'localhost')
-    scheduler_port = int(os.environ.get('SCHEDULER_PORT', '8000'))
-    
-    # Create and start node
-    node = DistributedNode(node_id, scheduler_host, scheduler_port)
-    
-    # Initialize cryptographic components
-    master_seed = secrets.token_bytes(32)  # In production, this would be shared securely
-    node.initialize_cryptographic_components(master_seed)
-    
-    # Start node
-    node.start()
-    
+def main() -> None:
+    setup_logging()
+    parser = argparse.ArgumentParser(description="DPK Distributed Node")
+    parser.add_argument("--node-id", type=str, required=True)
+    parser.add_argument("--scheduler-url", type=str, default="http://localhost:8000")
+    parser.add_argument("--heartbeat-interval", type=float, default=5.0)
+    args = parser.parse_args()
+
+    node = DistributedNode(
+        node_id=args.node_id,
+        scheduler_url=args.scheduler_url,
+        heartbeat_interval=args.heartbeat_interval,
+    )
     try:
-        # Keep node running
-        while True:
-            time.sleep(1.0)
+        node.run()
     except KeyboardInterrupt:
-        logger.info("Shutting down node...")
         node.stop()
 
 

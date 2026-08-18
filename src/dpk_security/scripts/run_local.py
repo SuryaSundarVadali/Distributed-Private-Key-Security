@@ -10,10 +10,11 @@ import subprocess
 import signal
 import logging
 import argparse
+import argparse
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent))
+from dpk_security.core_system.scheduler_server import SchedulerServer
+from dpk_security.core_system.distributed_node import DistributedNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
