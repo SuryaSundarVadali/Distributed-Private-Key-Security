@@ -29,7 +29,7 @@ class TaskPriority(Enum):
 
 @dataclass
 class CryptoTask:
-    """Cryptographic task with MFKDF requirements"""
+    """Computational task scheduled with HEFT; may carry crypto-related metadata."""
     task_id: str
     task_type: str  # 'key_generation', 'share_distribution', 'hotp_verification', etc.
     data: Dict[str, Any]
@@ -57,15 +57,18 @@ class CryptoTask:
 class NodeCapabilities:
     """Node capabilities and current status"""
     node_id: str
-    computation_power: float = 1.0  # Relative computation speed
+    computation_power: float = 1.0
     available_factors: List[str] = field(default_factory=list)
     max_concurrent_tasks: int = 5
     current_load: int = 0
     last_heartbeat: float = field(default_factory=time.time)
     is_active: bool = True
-    task_completion_rate: float = 0.95  # Success rate
+    task_completion_rate: float = 0.95
     average_task_time: float = 60.0
     communication_latency: Dict[str, float] = field(default_factory=dict)
+    # New fields used by executor/nodes
+    specialization: str = "generic"
+    supported_task_types: List[str] = field(default_factory=list)
     
     @property
     def is_overloaded(self) -> bool:

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dpk-security"
+version = "0.1.0"
+description = "Distributed Private Key Security for Autonomous Robot Swarms"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "flask",
+    "requests",
+    "numpy",
+    # add others from Infrastructure/requirements.txt
+]
+
+[project.scripts]
+dpk-scheduler = "dpk_security.core_system.scheduler_server:main"
+dpk-node = "dpk_security.core_system.distributed_node:main"
+dpk-executor = "dpk_security.core_system.enhanced_distributed_executor:main"

@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent))
+from dpk_security.core_system.task_scheduler import TaskPriority
 
 console = Console()
 
@@ -126,7 +126,7 @@ class SystemMonitor:
             max_tasks = node_info.get('max_concurrent_tasks', 0)
             load_percent = f"{(current_load/max(max_tasks, 1)*100):.1f}%"
             capacity = f"{current_load}/{max_tasks}"
-            specializations = ", ".join(node_info.get('specialized_tasks', [])[:2])
+            specializations = ", ".join(node_info.get('supported_task_types', [])[:2])
             
             nodes_table.add_row(node_id, status, load_percent, capacity, specializations)
         

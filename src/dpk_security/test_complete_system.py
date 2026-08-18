@@ -9,10 +9,10 @@ from pathlib import Path
 parent_dir = Path(__file__).parent
 sys.path.append(str(parent_dir / "Cryptographic Modules"))
 
-from hkdf_entropy import EntropyGenerator, HKDFImplementation
-from shamir_secret_sharing import ShamirSecretSharing
-from hotp_synchronization import HOTPCounter
-from smpc_verification import SecureMultiPartyComputation
+from dpk_security.crypto_modules.hkdf_entropy import EntropyGenerator, HKDFImplementation
+from dpk_security.crypto_modules.shamir_secret_sharing import ShamirSecretSharing
+from dpk_security.crypto_modules.merkle_tree import MerkleTreeMissionStructure
+from dpk_security.crypto_modules.smpc_verification import SecureMultiPartyComputation
 import secrets
 import random
 
