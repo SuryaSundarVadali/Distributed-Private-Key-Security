@@ -32,26 +32,13 @@ sys.path.append(str(crypto_modules_dir))
 
 from task_scheduler import CryptoTask, NodeCapabilities, TaskPriority
 
-# Import from Cryptographic Modules folder
 try:
-    from key_generation import MFKDFDeterministicKeyGenerator
+    from key_generation import DeterministicRSAKeyGenerator
+    from hotp import HOTP
 
 except ImportError as e:
-    print(f"Warning: Could not import cryptographic modules: {e}")
-    print("Running in simulation mode without full cryptographic functionality")
-    
-    # Create mock classes for missing imports
-    class MockClass:
-        def __init__(self, *args, **kwargs):
-            pass
-        def __getattr__(self, name):
-            return lambda *args, **kwargs: None
-    
-    DistributedMFKDF = MockClass
-    MFKDFDeterministicKeyGenerator = MockClass
-    ShamirSecretSharing = MockClass
-    HOTP = MockClass
-    MerkleTree = MockClass
+    print(f"Error: Could not import cryptographic modules: {e}")
+    sys.exit(1)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -81,7 +68,7 @@ class DistributedNode:
         
         # Cryptographic infrastructure (runs on every node)
         self.master_seed = None
-        self.mfkdf_generator = None
+        self.key_generator = None
         self.hotp_secret = None
         self.hotp_counter = 0
         self.private_key = None
@@ -141,24 +128,24 @@ class DistributedNode:
         logger.info(f"Initializing cryptographic infrastructure for {self.node_id}")
         
         self.master_seed = master_seed
-        
+
         try:
-            # 1. Initialize MFKDF key generation
-            self.mfkdf_generator = MFKDFDeterministicKeyGenerator(self.node_id)
-            
-            # 2. Initialize HOTP for authentication
+            # 1. Initialize deterministic RSA key generator
+            self.key_generator = DeterministicRSAKeyGenerator(self.node_id, master_seed)
+            self.private_key = self.key_generator.generate_rsa_key()
+
+            # 2. Initialize HOTP secret for this node
             self.hotp_secret = hashlib.sha256(master_seed + self.node_id.encode()).digest()
             self.hotp_counter = 0
-            
-            # 3. Mock cryptographic setup for demo
-            self.secret_shares = [(i, hash(self.node_id + str(i))) for i in range(5)]
-            self.merkle_proofs = {f"data_{i}": {"proof": f"proof_{i}", "root_hash": "mock_hash"} for i in range(3)}
-            
+
+            # 3. Placeholder structures for shares/proofs if needed later
+            self.secret_shares = []
+            self.merkle_proofs = {}
+
             logger.info(f"Cryptographic setup complete for {self.node_id}")
-            
         except Exception as e:
             logger.warning(f"Cryptographic setup failed for {self.node_id}: {e}")
-            logger.info("Continuing with mock cryptographic components")
+            logger.info("Continuing with limited cryptographic functionality")
     
     def start(self):
         """Start the distributed node"""
@@ -197,8 +184,12 @@ class DistributedNode:
         """Send heartbeat to scheduler"""
         try:
             # Generate mock HOTP token
-            hotp_token = hash(str(time.time()) + self.node_id) % 1000000
-            self.hotp_counter += 1
+            # Generate HOTP token using per-node secret and counter
+            if self.hotp_secret is not None:
+                hotp_token = HOTP.generate(self.hotp_secret, self.hotp_counter)
+                self.hotp_counter += 1
+            else:
+                hotp_token = None
             
             heartbeat_data = {
                 'node_id': self.node_id,
@@ -858,7 +849,7 @@ class DistributedNode:
             },
             'performance_metrics': self.performance_metrics,
             'cryptographic_state': {
-                'has_mfkdf_generator': self.mfkdf_generator is not None,
+                'has_key_generator': self.key_generator is not None,
                 'has_private_key': self.private_key is not None,
                 'secret_shares_count': len(self.secret_shares),
                 'hotp_counter': self.hotp_counter,

@@ -21,12 +21,11 @@ from task_scheduler import HEFTScheduler, CryptoTask, NodeCapabilities, TaskPrio
 
 # Import from Cryptographic Modules folder
 try:
-    from mfkdf import DistributedMFKDF
-    from key_generation import MFKDFDeterministicKeyGenerator
-    from secret_sharing import ShamirSecretSharing
+    from key_generation import DeterministicRSAKeyGenerator
+    from shamir_secret_sharing import ShamirSecretSharing
     from hotp import HOTP
-    from merkle_tree import MerkleTree
-    from mpc import SecureMultiPartyComputation, MPCNode
+    from merkle_tree import MerkleTreeMissionStructure  # or MerkleTree if you kept that name
+    from smpc_verification import SecureMultiPartyComputation  # 3‑phase aggregation SMPC
 except ImportError as e:
     print(f"Error importing cryptographic modules: {e}")
     print("Please ensure all cryptographic modules are in the 'Cryptographic Modules' folder")
@@ -43,10 +42,6 @@ class DistributedCryptoExecutor:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.scheduler = HEFTScheduler(heartbeat_interval=config.get('heartbeat_interval', 10.0))
-        self.distributed_mfkdf = DistributedMFKDF(
-            node_count=config['num_nodes'],
-            threshold=config['threshold']
-        )
         
         # Cryptographic infrastructure (runs automatically on every node)
         self.master_seed = secrets.token_bytes(32)
@@ -91,27 +86,19 @@ class DistributedCryptoExecutor:
         logger.info("✅ Cryptographic infrastructure initialized successfully")
     
     def _perform_key_generation(self):
-        """Generate master private key using MFKDF"""
-        logger.info("🔐 Generating master private key with MFKDF...")
-        
-        # Setup MFKDF for key generation
-        generator = MFKDFDeterministicKeyGenerator("master_node")
-        
-        # Generate RSA key with multiple factors
-        active_factors = ['biometric', 'password', 'hardware_token']
-        rsa_key = generator.generate_rsa_key_with_mfkdf(
-            active_factors=active_factors,
-            key_size=2048
-        )
-        
-        # Convert to integer for sharing
+        """Generate master private key deterministically from master_seed and node_id."""
+        logger.info("🔐 Generating master private key deterministically...")
+
+        # Use the new HKDF-based deterministic generator
+        generator = DeterministicRSAKeyGenerator("master_node", self.master_seed)
+        rsa_key = generator.generate_rsa_key(key_size=2048)
+
         private_key_der = rsa_key.export_key('DER')
         private_key_int = int.from_bytes(private_key_der, 'big')
-        
-        # Store in crypto state
+
         self.crypto_state['master_private_key'] = private_key_int
         self.crypto_state['master_key_der'] = private_key_der
-        
+
         logger.info(f"✅ Master key generated: {rsa_key.size_in_bits()} bits")
     
     def _perform_share_distribution(self):
@@ -121,19 +108,22 @@ class DistributedCryptoExecutor:
         if not self.crypto_state['master_private_key']:
             raise ValueError("Master private key not generated")
         
-        # Create shares using Shamir's Secret Sharing
-        shares = ShamirSecretSharing.create_shares(
-            self.crypto_state['master_private_key'],
-            self.config['threshold'],
-            self.config['num_nodes']
+                # Instantiate Shamir with Feldman-style verification
+        sss = ShamirSecretSharing(
+            threshold=self.config['threshold'],
+            num_shares=self.config['num_nodes'],
         )
-        
-        # Distribute shares to nodes
-        for i, share in enumerate(shares):
-            node_id = f'crypto_node_{i}'
+        self.crypto_state['sss'] = sss
+
+        shares_dict = sss.share_generation(self.crypto_state['master_private_key'])
+
+        # shares_dict keys are 1..n; map them to crypto_node_0..crypto_node_{n-1}
+        for rid, share in shares_dict.items():
+            node_index = rid - 1
+            node_id = f'crypto_node_{node_index}'
             self.crypto_state['private_key_shares'][node_id] = share
         
-        logger.info(f"✅ Distributed {len(shares)} shares with threshold {self.config['threshold']}")
+        logger.info(f"✅ Distributed {len(shares_dict)} shares with threshold {self.config['threshold']}")
     
     def _perform_hotp_setup(self):
         """Setup HOTP authentication for all nodes"""
@@ -166,29 +156,22 @@ class DistributedCryptoExecutor:
             raise ValueError("No share data available for Merkle tree")
         
         # Create Merkle tree
-        merkle_tree = MerkleTree(share_data)
+        merkle_tree = MerkleTreeMissionStructure(leaves=share_data)
         self.crypto_state['merkle_tree'] = merkle_tree
         
         logger.info(f"✅ Merkle tree created with {len(share_data)} leaves")
     
     def _perform_mpc_initialization(self):
-        """Initialize MPC framework"""
-        logger.info("🤝 Initializing MPC framework...")
-        
-        # Create MPC nodes from available shares
-        mpc_nodes = []
-        for node_id, share in self.crypto_state['private_key_shares'].items():
-            secret_value = share[0]  # Use x-coordinate as secret
-            mpc_node = MPCNode(node_id, secret_value)
-            mpc_nodes.append(mpc_node)
-        
-        # Initialize MPC system
-        mpc_system = SecureMultiPartyComputation(mpc_nodes, self.config['threshold'])
-        
-        # Store MPC system for later use
-        self.crypto_state['mpc_system'] = mpc_system
-        
-        logger.info(f"✅ MPC framework initialized with {len(mpc_nodes)} nodes")
+        """Initialize SMPC verification framework (3-phase aggregation)."""
+        logger.info("🤝 Initializing SMPC verification framework...")
+
+        smpc = SecureMultiPartyComputation(
+            num_robots=self.config['num_nodes'],
+            task_count=self.config.get('task_count', 0),
+        )
+        self.crypto_state['smpc_system'] = smpc
+
+        logger.info(f"✅ SMPC framework initialized for {self.config['num_nodes']} robots")
     
     def _register_task_handlers(self):
         """Register handlers for computational task types"""
@@ -414,7 +397,8 @@ class DistributedCryptoExecutor:
         """Verify cryptographic security before executing tasks"""
         # Verify HOTP authentication
         current_token = HOTP.generate(self.hotp_secret, self.counter)
-        hotp_valid = HOTP.verify(self.hotp_secret, current_token, self.counter)
+        verification_result = HOTP.verify(self.hotp_secret, current_token, self.counter)
+        hotp_valid = verification_result.valid
         
         # Verify Merkle tree integrity
         merkle_valid = self.crypto_state['merkle_tree'] is not None
@@ -422,8 +406,8 @@ class DistributedCryptoExecutor:
         # Verify secret shares are available
         shares_valid = len(self.crypto_state['private_key_shares']) >= self.config['threshold']
         
-        # Verify MPC system is ready
-        mpc_valid = 'mpc_system' in self.crypto_state
+        # Verify SMPC system is ready
+        mpc_valid = 'smpc_system' in self.crypto_state
         
         return hotp_valid and merkle_valid and shares_valid and mpc_valid
     

@@ -5,6 +5,7 @@ Coordinates task distribution using HEFT algorithm
 import time
 import threading
 import logging
+from typing import Optional
 from flask import Flask, request, jsonify
 import sys
 
@@ -199,6 +200,8 @@ class SchedulerServer:
     def start(self):
         """Start the scheduler server"""
         self.is_running = True
+
+        self.scheduler.start()
         
         # Create sample tasks
         self.create_sample_tasks()
@@ -245,13 +248,9 @@ def heartbeat():
                 
             logger.info(f"New node registered: {node_id}")
         else:
-            # Update existing node heartbeat
             node = scheduler_instance.scheduler.nodes[node_id]
-            if hasattr(node, 'update_status'):
-                node.update_status(
-                    current_load=data.get('current_load', 0),
-                    last_heartbeat=time.time()
-                )
+            node.current_load = data.get('current_load', node.current_load)
+            scheduler_instance.scheduler.update_node_heartbeat(node_id)
         
         return jsonify({"status": "success", "message": "Heartbeat received"}), 200
         
@@ -265,7 +264,8 @@ def get_task(node_id: str):
     """Get next task assignment for a node"""
     try:
         # Use correct method name
-        task = None
+        task = scheduler_instance.scheduler.get_next_task(node_id)
+        
         if hasattr(scheduler_instance.scheduler, 'get_task_assignment'):
             task = scheduler_instance.scheduler.get_task_assignment(node_id)
         elif hasattr(scheduler_instance.scheduler, 'get_next_task'):
@@ -299,6 +299,19 @@ def get_task(node_id: str):
     except Exception as e:
         logger.error(f"Task assignment error: {e}")
         return jsonify({"error": str(e)}), 500
+
+def get_next_task(self, node_id: str) -> Optional[CryptoTask]:
+    # Simple pull-based API: pick the best task for this node if any
+    if self.task_queue.empty():
+        return None
+    # Reuse existing scheduling logic by trying to assign a task
+    # and returning it instead of executing it directly.
+    # For now, just pop and return; node executes it.
+    task = self.task_queue.get()
+    task.assigned_node = node_id
+    task.assigned_at = time.time()
+    task.status = TaskStatus.ASSIGNED
+    return task
 
 
 @app.route('/update_task_status', methods=['POST'])

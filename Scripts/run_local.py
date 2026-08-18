@@ -46,7 +46,13 @@ class LocalSystemRunner:
                 cmd,
                 stdout=log_file,
                 stderr=subprocess.STDOUT,
-                cwd=Path(__file__).parent.parent
+                cwd=Path(__file__).parent.parent,
+                env={
+                    **os.environ,
+                    "NUM_NODES": str(self.num_nodes),
+                    "THRESHOLD": str(self.threshold),
+                    "SCHEDULER_PORT": str(self.scheduler_port),
+                },
             )
         
         self.processes.append(("scheduler", process))
